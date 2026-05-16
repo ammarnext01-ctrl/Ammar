@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advancis Sales Dashboard 2025</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .header-box {
+            background: linear-gradient(135deg, #1b5e20, #2e7d32);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .header-box h2 { margin: 0; font-size: 26px; }
+        .header-box p { margin: 10px 0 0 0; opacity: 0.9; font-size: 15px; line-height: 1.6; }
+        
+        .main-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 992px) {
+            .main-layout { grid-template-columns: 1fr; }
+        }
+        
+        /* أزرار الفلاتر الجانبية */
+        .sidebar {
+            background-color: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            height: fit-content;
+        }
+        .sidebar h3 { margin-top: 0; font-size: 18px; color: #1b5e20; border-bottom: 2px solid #e0e0e0; padding-bottom: 8px; }
+        .filter-group { margin-bottom: 18px; }
+        .filter-group label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px; }
+        .filter-group select, .filter-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-family: 'Tajawal', sans-serif;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .btn-upload {
+            background-color: #1565c0;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+            font-family: 'Tajawal', sans-serif;
+            margin-bottom: 15px;
+            transition: 0.3s;
+        }
+        .btn-upload:hover { background-color: #0d47a1; }
+
+        /* بطاقات الـ KPI */
+        .kpi-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .kpi-card {
+            background-color: white;
+            border-right: 5px solid #2e7d32;
+            border-radius: 8px;
+            padding: 15px 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .kpi-title { font-size: 13px; color: #6c757d; font-weight: 600; margin-bottom: 5px; }
+        .kpi-value { font-size: 20px; color: #1b5e20; font-weight: bold; word-break: break-all; }
+
+        /* الرسوم البيانية */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        @media (max-width: 768px) {
+            .charts-grid { grid-template-columns: 1fr; }
+        }
+        .chart-card {
+            background-color: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            position: relative;
+        }
+        .chart-card h4 { margin-top: 0; margin-bottom: 15px; font-size: 16px; color: #37474f; }
+
+        /* الجدول */
+        .table-card {
+            background-color: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            overflow-x: auto;
+        }
+        .table-card h4 { margin-top: 0; margin-bottom: 15px; color: #37474f; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: right;
+            font-size: 14px;
+        }
+        th, td { padding: 12px; border-bottom: 1px solid #e0e0e0; }
+        th { background-color: #f8f9fa; color: #2e7d32; font-weight: bold; }
+        tr:hover { background-color: #f1f8e9; }
+    </style>
+</head>
+<body>
+
+    <div class="header-box">
+        <h2>📊 لوحة التحكم التنفيذية والمطورة للمبيعات | Advancis 2025</h2>
+        <p>
+            <b>Company:</b> Khoury drug store &nbsp;|&nbsp; <b>Name:</b> ammar abumahfouz <br>
+            <b>Auditor:</b> TUV SUD &nbsp;|&nbsp; <b>Lead:</b> Dr. Abdallh Mostafa
+        </p>
+    </div>
+
+    <div class="main-layout">
+        <div class="sidebar">
+            <h3>📁 تحميل البيانات</h3>
+            <input type="file" id="fileInput" accept=".csv" style="display:none;" onchange="handleFile(this.files)">
+            <button class="btn-upload" onclick="document.getElementById('fileInput').click()">رفع ملف CSV للبيانات</button>
+            
+            <h3>🔍 الفلاتر الذكية</h3>
+            <div class="filter-group">
+                <label>تصفية حسب الشهر</label>
+                <select id="monthFilter" onchange="applyFilters()">
+                    <option value="All">كل الأشهر</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>تصفية حسب المحافظة</label>
+                <select id="areaFilter" onchange="applyFilters()">
+                    <option value="All">كل المحافظات</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>بحث باسم الصيدلية</label>
+                <input type="text" id="searchStore" placeholder="اكتب اسم الصيدلية..." oninput="applyFilters()">
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="kpi-container">
+                <div class="kpi-card">
+                    <div class="kpi-title">إجمالي صافي المبيعات</div>
+                    <div class="kpi-value" id="kpi-sales">0.00 JOD</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">إجمالي الكميات المباعة</div>
+                    <div class="kpi-value" id="kpi-qty">0 وحدة</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">إجمالي البونص الممنوح</div>
+                    <div class="kpi-value" id="kpi-bonus">0 وحدة</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">عدد الصيدليات الفعّالة</div>
+                    <div class="kpi-value" id="kpi-stores">0 صيدلية</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">المنتج الأكثر مبيعاً</div>
+                    <div class="kpi-value" id="kpi-top-item" style="font-size:12px; color:#1565c0;">-</div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h4>📈 صافي المبيعات الشهري لمنتجات Advancis</h4>
+                    <canvas id="chartMonthly"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h4>📍 المبيعات حسب المحافظة / المنطقة</h4>
+                    <canvas id="chartArea"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h4>💊 أعلى المنتجات تحقيقاً للمبيعات</h4>
+                    <canvas id="chartItems"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h4>🏢 أعلى 5 صيدليات شراءً وسحباً</h4>
+                    <canvas id="chartStores"></canvas>
+                </div>
+            </div>
+
+            <div class="table-card">
+                <h4>📋 جدول البيانات التفصيلي المتفاعل (أول 50 سطر بناءً على الفلترة)</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>الشهر</th>
+                            <th>اسم الصيدلية</th>
+                            <th>وصف المنتج</th>
+                            <th>الكمية المباعة</th>
+                            <th>البونص</th>
+                            <th>صافي المبيعات (JOD)</th>
+                            <th>المحافظة</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr>
+                            <td colspan="7" style="text-align:center; color:#999;">الرجاء رفع ملف الـ CSV لتفعيل وعرض البيانات...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let rawData = [];
+        let chart1, chart2, chart3, chart4;
+        const monthsNamesAr = {
+            1: "يناير", 2: "فبراير", 3: "مارس", 4: "أبريل", 5: "مايو", 6: "يونيو",
+            7: "يوليو", 8: "أغسطس", 9: "سبتمبر", 10: "أكتوبر", 11: "نوفمبر", 12: "ديسمبر"
+        };
+
+        // وظيفة معالجة وقراءة الملف
+        function handleFile(files) {
+            if (files.length === 0) return;
+            Papa.parse(files[0], {
+                header: true,
+                dynamicTyping: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    rawData = results.data.map(row => {
+                        row.monthAr = monthsNamesAr[row.Month] || ("شهر " + row.Month);
+                        return row;
+                    });
+                    populateDropdowns();
+                    applyFilters();
+                }
+            });
+        }
+
+        // تعبئة الفلاتر بناءً على محتويات الملف تلقائياً
+        function populateDropdowns() {
+            const months = [...new Set(rawData.map(r => r.monthAr))].filter(Boolean);
+            const areas = [...new Set(rawData.map(r => r.Desc))].filter(Boolean);
+
+            const mFilter = document.getElementById('monthFilter');
+            mFilter.innerHTML = '<option value="All">كل الأشهر</option>';
+            months.forEach(m => mFilter.innerHTML += `<option value="${m}">${m}</option>`);
+
+            const aFilter = document.getElementById('areaFilter');
+            aFilter.innerHTML = '<option value="All">كل المحافظات</option>';
+            areas.forEach(a => aFilter.innerHTML += `<option value="${a}">${a}</option>`);
+        }
+
+        // تطبيق الفلاتر وحساب العمليات الرياضية وتحديث الرسوم والجدول
+        function applyFilters() {
+            if (rawData.length === 0) return;
+
+            const selectedMonth = document.getElementById('monthFilter').value;
+            const selectedArea = document.getElementById('areaFilter').value;
+            const searchStore = document.getElementById('searchStore').value.toLowerCase();
+
+            // فلترة المصفوفة الأساسية للبيانات
+            const filtered = rawData.filter(row => {
+                const matchMonth = (selectedMonth === 'All' || row.monthAr === selectedMonth);
+                const matchArea = (selectedArea === 'All' || row.Desc === selectedArea);
+                const matchStore = (!searchStore || (row.StoreName && row.StoreName.toLowerCase().includes(searchStore)));
+                return matchMonth && matchArea && matchStore;
+            });
+
+            // 1. حساب بطاقات الأداء KPI
+            let totalSales = 0, totalQty = 0, totalBonus = 0;
+            let storesSet = new Set();
+            let itemSalesMap = {}, storeSalesMap = {}, monthlySalesMap = {}, areaSalesMap = {};
+
+            filtered.forEach(row => {
+                const ns = row.NetSell || 0;
+                const q = row.qty || 0;
+                const b = row.Bounus || 0;
+
+                totalSales += ns;
+                totalQty += q;
+                totalBonus += b;
+
+                if (row.StoreName) {
+                    storesSet.add(row.StoreName);
+                    storeSalesMap[row.StoreName] = (storeSalesMap[row.StoreName] || 0) + ns;
+                }
+                if (row.ItemDesc) {
+                    itemSalesMap[row.ItemDesc] = (itemSalesMap[row.ItemDesc] || 0) + ns;
+                }
+                if (row.monthAr) {
+                    monthlySalesMap[row.monthAr] = (monthlySalesMap[row.monthAr] || 0) + ns;
+                }
+                if (row.Desc) {
+                    areaSalesMap[row.Desc] = (areaSalesMap[row.Desc] || 0) + ns;
+                }
+            });
+
+            // العثور على الأعلى مبيعاً
+            let topItem = "-";
+            let maxItemSales = -1;
+            for (let it in itemSalesMap) {
+                if (itemSalesMap[it] > maxItemSales) { maxItemSales = itemSalesMap[it]; topItem = it; }
+            }
+
+            // عرض قيم الـ KPIs في الواجهة
+            document.getElementById('kpi-sales').innerText = totalSales.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + " JOD";
+            document.getElementById('kpi-qty').innerText = totalQty.toLocaleString('en-US') + " وحدة";
+            document.getElementById('kpi-bonus').innerText = totalBonus.toLocaleString('en-US') + " وحدة";
+            document.getElementById('kpi-stores').innerText = storesSet.size + " صيدلية";
+            document.getElementById('kpi-top-item').innerText = topItem;
+
+            // 2. تحديث الرسوم البيانية بالأرقام الجديدة المفلترة
+            updateCharts(monthlySalesMap, areaSalesMap, itemSalesMap, storeSalesMap);
+
+            // 3. بناء وتحديث أسطر الجدول الديناميكي (أول 50 سطر للسرعة الكفاءة)
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = "";
+            filtered.slice(0, 50).forEach(row => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${row.monthAr || ''}</td>
+                        <td>${row.StoreName || ''}</td>
+                        <td>${row.ItemDesc || ''}</td>
+                        <td>${row.qty || 0}</td>
+                        <td>${row.Bounus || 0}</td>
+                        <td>${(row.NetSell || 0).toFixed(2)}</td>
+                        <td>${row.Desc || ''}</td>
+                    </tr>
+                `;
+            });
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">لا توجد نتائج تطابق خيارات التصفية الحالية!</td></tr>`;
+            }
+        }
+
+        // وظيفة تحديث الرسوم البيانية بمكتبة Chart.js التفاعلية
+        function updateCharts(monthlyData, areaData, itemData, storeData) {
+            // تدمير الرسوم البيانية القديمة لإعادة بنائها لمنع تداخل البيانات
+            if (chart1) chart1.destroy();
+            if (chart2) chart2.destroy();
+            if (chart3) chart3.destroy();
+            if (chart4) chart4.destroy();
+
+            // رسم المبيعات الشهرية (Line Chart)
+            const mLabels = Object.keys(monthlyData);
+            const mValues = Object.values(monthlyData);
+            chart1 = new Chart(document.getElementById('chartMonthly'), {
+                type: 'line',
+                data: {
+                    labels: mLabels,
+                    datasets: [{ label: 'صافي المبيعات', data: mValues, borderColor: '#2e7d32', backgroundColor: 'rgba(46, 125, 50, 0.1)', tension: 0.3, fill: true }]
+                },
+                options: { responsive: true }
+            });
+
+            // رسم توزيع المحافظات (Donut Chart)
+            chart2 = new Chart(document.getElementById('chartArea'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(areaData),
+                    datasets: [{ data: Object.values(areaData), backgroundColor: ['#1b5e20', '#1565c0', '#37474f', '#ff8f00', '#ad1457', '#6a1b9a'] }]
+                },
+                options: { responsive: true }
+            });
+
+            // رسم أعلى المنتجات مبيعاً (Horizontal Bar Chart)
+            const sortedItems = Object.entries(itemData).sort((a,b) => b[1] - a[1]).slice(0, 5);
+            chart3 = new Chart(document.getElementById('chartItems'), {
+                type: 'bar',
+                data: {
+                    labels: sortedItems.map(x => x[0]),
+                    datasets: [{ label: 'المبيعات JOD', data: sortedItems.map(x => x[1]), backgroundColor: '#1565c0' }]
+                },
+                options: { indexAxis: 'y', responsive: true }
+            });
+
+            // رسم أعلى الصيدليات سحباً (Vertical Bar Chart)
+            const sortedStores = Object.entries(storeData).sort((a,b) => b[1] - a[1]).slice(0, 5);
+            chart4 = new Chart(document.getElementById('chartStores'), {
+                type: 'bar',
+                data: {
+                    labels: sortedStores.map(x => x[0]),
+                    datasets: [{ label: 'المبيعات JOD', data: sortedStores.map(x => x[1]), backgroundColor: '#37474f' }]
+                },
+                options: { responsive: true }
+            });
+        }
+    </script>
+</body>
+</html>
